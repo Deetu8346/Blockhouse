@@ -154,5 +154,3 @@ This C++ project reconstructs the MBP-10 (Market by Price, top 10 levels) orderb
 - Outputs top 10 levels per side
 
 ---
-
-> For further verification, the code can be extended with unit tests using frameworks like Google Test or Catch2. 

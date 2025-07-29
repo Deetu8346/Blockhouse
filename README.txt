@@ -1,154 +1,158 @@
-MBP-10 Orderbook Reconstruction from MBO Data
-=============================================
+# 🚀 MBP-10 Orderbook Reconstruction from MBO Data
 
-Author: Aditya Srivastava
-Date: December 2024
+**Author:** Aditya Srivastava  
 
-OVERVIEW
---------
-This C++ implementation reconstructs MBP-10 (Market by Price - top 10 levels) orderbook 
-from MBO (Market by Order) data. The program processes high-frequency trading data 
-and generates the orderbook state after each action.
+---
 
-KEY FEATURES
-------------
-1. Handles all MBO action types: Add (A), Cancel (C), Trade (T), Fill (F)
-2. Implements special T->F->C sequence handling as per requirements
-3. Maintains separate bid/ask sides with proper price ordering
-4. Generates MBP-10 output with top 10 levels for each side
-5. High-performance implementation optimized for speed
+## 📋 Table of Contents
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Special Operations](#special-operations)
+- [Data Structures & Algorithms](#data-structures--algorithms)
+- [Optimization Strategies](#optimization-strategies)
+- [Performance](#performance)
+- [Limitations & Improvements](#limitations--improvements)
+- [Build & Usage](#build--usage)
+- [Input/Output Format](#inputoutput-format)
+- [Dependencies](#dependencies)
+- [Testing & Verification](#testing--verification)
 
-SPECIAL OPERATIONS IMPLEMENTED
------------------------------
-1. Initial Clear Action: Skips the first row with action 'C' and side 'R'
-2. T->F->C Sequence Handling: 
-   - Trades (T) are stored on the opposite side of the book
-   - Fills (F) and Cancels (C) complete the sequence
-   - The trade affects the orderbook only after the complete sequence
-3. Neutral Side Handling: Trades with side 'N' don't alter the orderbook
+---
 
-DATA STRUCTURES & ALGORITHMS
----------------------------
-1. OrderBook Class:
-   - Uses std::map for price-ordered levels (bids: descending, asks: ascending)
-   - std::unordered_map for O(1) order lookups by order_id
-   - std::vector for tracking pending trade sequences
+## 📝 Overview
+This C++ project reconstructs the MBP-10 (Market by Price, top 10 levels) orderbook from MBO (Market by Order) data. It is designed for high-frequency trading environments, efficiently processing streams of trade actions to maintain an accurate, real-time orderbook.
 
-2. Level Management:
-   - Each price level tracks total size and set of order IDs
-   - Automatic level cleanup when total size reaches zero
-   - Efficient order addition/removal/update operations
+---
 
-3. Trade Sequence Tracking:
-   - PendingTrade struct to track T->F->C sequences
-   - Linear search through pending trades (optimized for small sequences)
-   - Proper side matching for sequence completion
+## ✨ Key Features
+- **Handles all MBO action types:** Add (A), Cancel (C), Trade (T), Fill (F)
+- **Implements T→F→C sequence logic** as required by modern exchanges
+- **Maintains separate bid/ask sides** with correct price ordering
+- **Outputs MBP-10** (top 10 levels per side) in the required CSV format
+- **Highly optimized** for speed and memory efficiency
 
-OPTIMIZATION STRATEGIES
-----------------------
-1. Compiler Optimizations:
-   - -O3: Maximum optimization level
-   - -march=native -mtune=native: CPU-specific optimizations
-   - -std=c++17: Modern C++ features for better performance
+---
 
-2. Data Structure Choices:
-   - std::map for price ordering (logarithmic operations)
-   - std::unordered_map for order lookups (amortized O(1))
-   - std::set for order ID tracking within levels
-   - std::vector for output records (pre-allocated)
+## ⚡ Special Operations
+- **Initial Clear Action:** Skips the first row if action is 'C' and side is 'R' (start with empty book)
+- **T→F→C Sequence Handling:**
+  - Only the Cancel (C) updates the book, but T/F/C are combined into a single trade event
+  - T on ASK (not in book) is matched to BID side, and vice versa
+  - T with side 'N' is ignored
+- **Neutral Side Handling:** Trades with side 'N' do not alter the orderbook
 
-3. Memory Management:
-   - Stack allocation for small objects
-   - Efficient string parsing with std::stringstream
-   - Minimal memory allocations during processing
+---
 
-4. I/O Optimizations:
-   - Single-pass CSV parsing
-   - Buffered output writing
-   - Minimal string operations
+## 🏗️ Data Structures & Algorithms
+- **OrderBook Class:**
+  - `std::map` for price-ordered levels (bids: descending, asks: ascending)
+  - `std::unordered_map` for O(1) order lookups by order_id
+  - `std::vector` for tracking pending trade sequences
+- **Level Management:**
+  - Each price level tracks total size and set of order IDs
+  - Automatic cleanup when total size reaches zero
+- **Trade Sequence Tracking:**
+  - `PendingTrade` struct for T→F→C sequences
+  - Linear search through pending trades (efficient for small k)
 
-PERFORMANCE CONSIDERATIONS
--------------------------
-1. Time Complexity:
-   - Order addition: O(log n) for price level insertion
-   - Order lookup: O(1) average case
-   - Trade sequence matching: O(k) where k is pending trades
-   - MBP generation: O(10) per side (constant time)
+---
 
-2. Space Complexity:
-   - O(n) for order storage
-   - O(m) for price levels where m ≤ n
-   - O(k) for pending trades where k is typically small
+## 🏎️ Optimization Strategies
+- **Compiler:** `-O3` for max optimization, `-std=c++17`
+- **Data Structures:**
+  - `std::map` for O(log n) price operations
+  - `std::unordered_map` for O(1) order lookups
+  - `std::set` for order ID tracking within levels
+- **Memory:**
+  - Stack allocation for small objects
+  - Efficient string parsing with `std::stringstream`
+- **I/O:**
+  - Single-pass CSV parsing
+  - Buffered output writing
 
-3. Bottlenecks Identified:
-   - Linear search through pending trades (acceptable for small k)
-   - CSV parsing overhead (mitigated with efficient parsing)
-   - String operations in output generation
+---
 
-LIMITATIONS & IMPROVEMENTS
--------------------------
-1. Current Limitations:
-   - Linear search for trade sequence matching
-   - No parallel processing capabilities
-   - Memory usage scales with number of orders
+## 📈 Performance
+- **Time Complexity:**
+  - Order addition: O(log n)
+  - Order lookup: O(1)
+  - Trade sequence matching: O(k) (small k)
+  - MBP generation: O(10) per side (constant)
+- **Space Complexity:**
+  - O(n) for orders
+  - O(m) for price levels (m ≤ n)
+  - O(k) for pending trades
+- **Bottlenecks:**
+  - Linear search for trade sequences (acceptable for small k)
+  - CSV parsing (optimized)
 
-2. Potential Improvements:
-   - Use hash-based trade sequence tracking for O(1) lookups
-   - Implement memory pools for order allocation
-   - Add SIMD optimizations for bulk operations
-   - Consider lock-free data structures for multi-threading
+---
 
-3. Scalability Considerations:
-   - For very large datasets, consider streaming approach
-   - Implement order ID compression for memory efficiency
-   - Add configurable output formats
+## 🚧 Limitations & Improvements
+- **Current:**
+  - Linear search for trade sequence matching
+  - No parallel processing
+  - Memory usage scales with number of orders
+- **Potential:**
+  - Hash-based trade sequence tracking
+  - Memory pools for order allocation
+  - SIMD optimizations
+  - Lock-free data structures for multi-threading
+  - Streaming for very large datasets
 
-BUILD & USAGE
--------------
-1. Build the executable:
+---
+
+## 🛠️ Build & Usage
+1. **Build the executable:**
+   ```sh
    make
-
-2. Run with input file:
+   ```
+2. **Run with input file:**
+   ```sh
    ./reconstruction_aditya mbo.csv
-
-3. Test with sample data:
+   ```
+3. **Test with sample data:**
+   ```sh
    make test
-
-4. Performance testing:
+   ```
+4. **Performance testing:**
+   ```sh
    make perf
-
-5. Clean build artifacts:
+   ```
+5. **Clean build artifacts:**
+   ```sh
    make clean
+   ```
 
-INPUT FORMAT
------------
-CSV with columns: ts_event,ts_rtt,ts_instrument,side,action,level,order_id,price,size,channel,sequence
+---
 
-OUTPUT FORMAT
-------------
-CSV with columns: ts_event,ts_rtt,ts_instrument,side,level,price,size,channel,sequence
+## 📥 Input/Output Format
+- **Input CSV:**
+  - `ts_event,ts_rtt,ts_instrument,side,action,level,order_id,price,size,channel,sequence`
+- **Output CSV:**
+  - `ts_event,ts_rtt,ts_instrument,side,level,price,size,channel,sequence`
 
-DEPENDENCIES
------------
+---
+
+## 📦 Dependencies
 - C++17 compatible compiler (g++ recommended)
 - Standard C++ library only (no external dependencies)
 
-TESTING
--------
-The implementation includes:
-1. Sample MBO input data (mbo.csv)
-2. Expected MBP output (mbp.csv)
-3. Automated comparison in Makefile
-4. Performance timing measurements
+---
 
-CORRECTNESS VERIFICATION
------------------------
-The implementation correctly handles:
-1. All MBO action types
-2. Special T->F->C sequence requirements
-3. Price level ordering (bids descending, asks ascending)
-4. Orderbook state consistency
-5. Top 10 level output generation
+## ✅ Testing & Verification
+- **Sample MBO input:** `mbo.csv`
+- **Expected MBP output:** `mbp.csv`
+- **Automated comparison:** `make test`
+- **Performance timing:** `make perf`
 
-For additional verification, the code can be extended with unit tests
-using frameworks like Google Test or Catch2. 
+### Correctness
+- Handles all MBO action types
+- Implements T→F→C sequence requirements
+- Maintains price level ordering (bids descending, asks ascending)
+- Ensures orderbook state consistency
+- Outputs top 10 levels per side
+
+---
+
+> For further verification, the code can be extended with unit tests using frameworks like Google Test or Catch2. 
